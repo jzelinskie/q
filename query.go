@@ -16,60 +16,61 @@ var (
 
 type Clause interface {
 	ClauseKind() ClauseKind
-	SQLMarshalFunc() SQLMarshalFunc
+	Prelude() SQLMarshalFunc
+	Predicate() SQLMarshalFunc
 }
 
 type Query struct {
-	prelude SQLMarshalFunc
-	clauses []Clause
+	Prelude SQLMarshalFunc
+	Clauses []Clause
 }
 
 func (q Query) Where(f SQLMarshalFunc) Query {
 	return Query{
-		q.prelude,
-		append(q.clauses, Where(f)),
+		q.Prelude,
+		append(q.Clauses, Where(f)),
 	}
 }
 
 func (q Query) OrderBy(f SQLMarshalFunc) Query {
 	return Query{
-		q.prelude,
-		append(q.clauses, OrderBy(f)),
+		q.Prelude,
+		append(q.Clauses, OrderBy(f)),
 	}
 }
 
 func (q Query) SQL(d Dialect) string {
-	renderedClauses := map[ClauseKind]string{
-		WhereClause:   "",
-		OrderByClause: "",
-		GroupByClause: "",
-		LimitClause:   "",
-		OffsetClause:  "",
+	clauses := map[ClauseKind]Clause{
+		WhereClause:   nil,
+		OrderByClause: nil,
+		GroupByClause: nil,
+		LimitClause:   nil,
+		OffsetClause:  nil,
 	}
 
-	for _, clause := range q.clauses {
-		if clause.ClauseKind() == WhereClause {
-			renderedClauses[WhereClause] = clause.SQLMarshalFunc()(d)
+	for _, clause := range q.Clauses {
+		if clause.ClauseKind() == WhereClause && clauses[WhereClause] != nil {
+			clauses[WhereClause] = Where(And(clauses[WhereClause].Predicate(), clause.Predicate()))
 		} else {
-			renderedClauses[clause.ClauseKind()] = clause.SQLMarshalFunc()(d)
+			clauses[clause.ClauseKind()] = clause
 		}
 	}
 
-	sql := q.prelude(d)
-	if renderedClauses[WhereClause] != "" {
-		sql += " " + renderedClauses[WhereClause]
+	sql := q.Prelude(d)
+	if clause, ok := clauses[WhereClause]; ok && clause != nil {
+		sql += " " + clause.Prelude()(d) + clause.Predicate()(d)
 	}
-	if renderedClauses[GroupByClause] != "" {
-		sql += " " + renderedClauses[GroupByClause]
+	if clause, ok := clauses[GroupByClause]; ok && clause != nil {
+		sql += " " + clause.Prelude()(d) + clause.Predicate()(d)
 	}
-	if renderedClauses[OrderByClause] != "" {
-		sql += " " + renderedClauses[OrderByClause]
+	if clause, ok := clauses[OrderByClause]; ok && clause != nil {
+		sql += " " + clause.Prelude()(d) + clause.Predicate()(d)
 	}
-	if renderedClauses[LimitClause] != "" {
-		sql += " " + renderedClauses[LimitClause]
+	if clause, ok := clauses[LimitClause]; ok && clause != nil {
+		sql += " " + clause.Prelude()(d) + clause.Predicate()(d)
 	}
-	if renderedClauses[OffsetClause] != "" {
-		sql += " " + renderedClauses[OffsetClause]
+	if clause, ok := clauses[OffsetClause]; ok && clause != nil {
+		sql += " " + clause.Prelude()(d) + clause.Predicate()(d)
 	}
 
 	return sql
@@ -131,18 +132,14 @@ var (
 	Random     = NewFunction("random")
 )
 
-type orderBy struct{ predicate SQLMarshalFunc }
+type OrderBy SQLMarshalFunc
 
-func OrderBy(predicate SQLMarshalFunc) orderBy { return orderBy{predicate} }
-func (o orderBy) ClauseKind() ClauseKind       { return OrderByClause }
-func (o orderBy) SQLMarshalFunc() SQLMarshalFunc {
-	return func(d Dialect) string { return "ORDER BY " + o.predicate(d) }
-}
+func (o OrderBy) ClauseKind() ClauseKind    { return OrderByClause }
+func (o OrderBy) Prelude() SQLMarshalFunc   { return func(d Dialect) string { return "ORDER BY " } }
+func (o OrderBy) Predicate() SQLMarshalFunc { return SQLMarshalFunc(o) }
 
-type where struct{ predicate SQLMarshalFunc }
+type Where SQLMarshalFunc
 
-func Where(predicate SQLMarshalFunc) where { return where{predicate} }
-func (w where) ClauseKind() ClauseKind     { return WhereClause }
-func (w where) SQLMarshalFunc() SQLMarshalFunc {
-	return func(d Dialect) string { return "WHERE " + w.predicate(d) }
-}
+func (w Where) ClauseKind() ClauseKind    { return WhereClause }
+func (w Where) Prelude() SQLMarshalFunc   { return func(d Dialect) string { return "WHERE " } }
+func (w Where) Predicate() SQLMarshalFunc { return SQLMarshalFunc(w) }
