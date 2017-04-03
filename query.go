@@ -1,7 +1,5 @@
 package q
 
-import "strings"
-
 type SQLMarshalFunc func(Dialect) string
 
 type ClauseKind string
@@ -76,10 +74,10 @@ func (q Query) SQL(d Dialect) string {
 	return sql
 }
 
-func Select(tables, columns []string) Query {
+func Select(tables, columns SQLMarshalFunc) Query {
 	return Query{
 		func(d Dialect) string {
-			return "SELECT " + strings.Join(columns, ", ") + " FROM " + strings.Join(tables, ", ")
+			return "SELECT " + columns(d) + " FROM " + tables(d)
 		},
 		nil,
 	}
@@ -125,6 +123,7 @@ func NewConstant(tokenName string) Constant {
 func Raw(s string) SQLMarshalFunc { return func(d Dialect) string { return s } }
 
 var (
+	Star       = Raw("*")
 	And        = NewConjunction("and")
 	Eq         = NewConjunction("equals")
 	Ascending  = NewSuffix("ascending")
