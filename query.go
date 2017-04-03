@@ -132,14 +132,32 @@ var (
 	Random     = NewFunction("random")
 )
 
+type Where SQLMarshalFunc
+
+func (w Where) ClauseKind() ClauseKind    { return WhereClause }
+func (w Where) Prelude() SQLMarshalFunc   { return func(d Dialect) string { return "WHERE " } }
+func (w Where) Predicate() SQLMarshalFunc { return SQLMarshalFunc(w) }
+
+type GroupBy SQLMarshalFunc
+
+func (g GroupBy) ClauseKind() ClauseKind    { return GroupByClause }
+func (g GroupBy) Prelude() SQLMarshalFunc   { return func(d Dialect) string { return "GROUP BY " } }
+func (g GroupBy) Predicate() SQLMarshalFunc { return SQLMarshalFunc(g) }
+
 type OrderBy SQLMarshalFunc
 
 func (o OrderBy) ClauseKind() ClauseKind    { return OrderByClause }
 func (o OrderBy) Prelude() SQLMarshalFunc   { return func(d Dialect) string { return "ORDER BY " } }
 func (o OrderBy) Predicate() SQLMarshalFunc { return SQLMarshalFunc(o) }
 
-type Where SQLMarshalFunc
+type Limit SQLMarshalFunc
 
-func (w Where) ClauseKind() ClauseKind    { return WhereClause }
-func (w Where) Prelude() SQLMarshalFunc   { return func(d Dialect) string { return "WHERE " } }
-func (w Where) Predicate() SQLMarshalFunc { return SQLMarshalFunc(w) }
+func (l Limit) ClauseKind() ClauseKind    { return LimitClause }
+func (l Limit) Prelude() SQLMarshalFunc   { return func(d Dialect) string { return "LIMIT " } }
+func (l Limit) Predicate() SQLMarshalFunc { return SQLMarshalFunc(l) }
+
+type Offset SQLMarshalFunc
+
+func (o Offset) ClauseKind() ClauseKind    { return OffsetClause }
+func (o Offset) Prelude() SQLMarshalFunc   { return func(d Dialect) string { return "OFFSET " } }
+func (o Offset) Predicate() SQLMarshalFunc { return SQLMarshalFunc(o) }
