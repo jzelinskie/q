@@ -5,9 +5,11 @@ the search for a flexible SQL query composition library for Go
 the goal is to enable writing something like this:
 
 ```go
-query := q.
+baseQuery := q.
 	Select(Users, q.Star).
-	Where(q.Eq(Users.name, q.Str("Jimmy"))).
+	Where(q.Eq(Users.name, q.Str("Jimmy")))
+
+query := baseQuery.
 	OrderBy(q.Random(nil)).
 	Limit(1)
 
