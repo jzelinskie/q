@@ -24,16 +24,46 @@ type Query struct {
 }
 
 func (q Query) Where(f SQLMarshalFunc) Query {
+	clauses := make([]Clause, len(q.Clauses))
+	copy(clauses, q.Clauses)
 	return Query{
 		q.Prelude,
-		append(q.Clauses, Where(f)),
+		append(clauses, Where(f)),
+	}
+}
+func (q Query) GroupBy(f SQLMarshalFunc) Query {
+	clauses := make([]Clause, len(q.Clauses))
+	copy(clauses, q.Clauses)
+	return Query{
+		q.Prelude,
+		append(clauses, GroupBy(f)),
 	}
 }
 
 func (q Query) OrderBy(f SQLMarshalFunc) Query {
+	clauses := make([]Clause, len(q.Clauses))
+	copy(clauses, q.Clauses)
 	return Query{
 		q.Prelude,
-		append(q.Clauses, OrderBy(f)),
+		append(clauses, OrderBy(f)),
+	}
+}
+
+func (q Query) Limit(f SQLMarshalFunc) Query {
+	clauses := make([]Clause, len(q.Clauses))
+	copy(clauses, q.Clauses)
+	return Query{
+		q.Prelude,
+		append(clauses, Limit(f)),
+	}
+}
+
+func (q Query) Offset(f SQLMarshalFunc) Query {
+	clauses := make([]Clause, len(q.Clauses))
+	copy(clauses, q.Clauses)
+	return Query{
+		q.Prelude,
+		append(clauses, Offset(f)),
 	}
 }
 
