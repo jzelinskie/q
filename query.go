@@ -7,6 +7,7 @@ type ClauseKind string
 var (
 	WhereClause   = ClauseKind("WHERE")
 	GroupByClause = ClauseKind("GROUP BY")
+	HavingClause  = ClauseKind("HAVING")
 	OrderByClause = ClauseKind("ORDER BY")
 	LimitClause   = ClauseKind("LIMIT")
 	OffsetClause  = ClauseKind("OFFSET")
@@ -37,6 +38,16 @@ func (q Query) GroupBy(f SQLMarshalFunc) Query {
 	return Query{
 		q.Prelude,
 		append(clauses, GroupBy(f)),
+	}
+}
+
+// Having will only be used if there is a GroupBy present.
+func (q Query) Having(f SQLMarshalFunc) Query {
+	clauses := make([]Clause, len(q.Clauses))
+	copy(clauses, q.Clauses)
+	return Query{
+		q.Prelude,
+		append(clauses, Having(f)),
 	}
 }
 
@@ -153,12 +164,15 @@ func NewConstant(tokenName string) Constant {
 func Raw(s string) SQLMarshalFunc { return func(d Dialect) string { return s } }
 
 var (
-	Star       = Raw("*")
-	And        = NewConjunction("and")
-	Eq         = NewConjunction("equals")
-	Ascending  = NewSuffix("ascending")
-	Descending = NewSuffix("descending")
-	Random     = NewFunction("random")
+	Star        = Raw("*")
+	And         = NewConjunction("and")
+	Eq          = NewConjunction("equals")
+	GreaterThan = NewConjunction("greaterthan")
+	LessThan    = NewConjunction("lessthan")
+	Ascending   = NewSuffix("ascending")
+	Descending  = NewSuffix("descending")
+	Random      = NewFunction("random")
+	Count       = NewFunction("count")
 )
 
 type Where SQLMarshalFunc
@@ -172,6 +186,12 @@ type GroupBy SQLMarshalFunc
 func (g GroupBy) ClauseKind() ClauseKind    { return GroupByClause }
 func (g GroupBy) Prelude() SQLMarshalFunc   { return func(d Dialect) string { return "GROUP BY " } }
 func (g GroupBy) Predicate() SQLMarshalFunc { return SQLMarshalFunc(g) }
+
+type Having SQLMarshalFunc
+
+func (h Having) ClauseKind() ClauseKind    { return HavingClause }
+func (h Having) Prelude() SQLMarshalFunc   { return func(d Dialect) string { return "HAVING " } }
+func (h Having) Predicate() SQLMarshalFunc { return SQLMarshalFunc(h) }
 
 type OrderBy SQLMarshalFunc
 

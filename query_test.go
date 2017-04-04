@@ -3,10 +3,21 @@ package q
 import "testing"
 
 func TestSimpleQuery(t *testing.T) {
-	table := []struct{ query, expected string }{
+	table := []struct {
+		query    Query
+		expected string
+	}{
 		{
-			Select(Raw("Users"), Star).Where(Eq(Raw("name"), Raw("'Jimmy'"))).OrderBy(Random(nil)).SQL(MySQL),
+			Select(Raw("Users"), Star).Where(Eq(Raw("name"), Raw("'Jimmy'"))).OrderBy(Random(nil)),
 			"SELECT * FROM Users WHERE name = 'Jimmy' ORDER BY RAND()",
+		},
+		{
+			Select(Raw("Users"), Star).GroupBy(Raw("User.name")).Having(GreaterThan(Count(Raw("Users.id")), Raw("5"))),
+			"SELECT * FROM Users GROUP BY User.name HAVING COUNT(Users.id) > 5",
+		},
+		{
+			Select(Raw("Users"), Star).Having(GreaterThan(Count(Raw("Users.id")), Raw("5"))),
+			"SELECT * FROM Users",
 		},
 	}
 	for _, tt := range table {
