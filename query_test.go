@@ -21,8 +21,9 @@ func TestSimpleQuery(t *testing.T) {
 		},
 	}
 	for _, tt := range table {
-		if tt.query != tt.expected {
-			t.Errorf("failed to render SQL => wanted: %q, got: %q", tt.expected, tt.query)
+		sql := MySQL.RenderSQL(tt.query)
+		if sql != tt.expected {
+			t.Errorf("failed to render SQL => wanted: %q, got: %q", tt.expected, sql)
 		}
 	}
 }
@@ -33,8 +34,8 @@ func TestQuerySharing(t *testing.T) {
 	extendedQuery := baseQuery.Where(Eq(Raw("id"), Raw("1")))
 	extendedQueryExpected := "SELECT * FROM Users WHERE name = 'Jimmy' AND id = 1"
 
-	baseQueryRendered := baseQuery.SQL(MySQL)
-	extendedQueryRendered := extendedQuery.SQL(MySQL)
+	baseQueryRendered := MySQL.RenderSQL(baseQuery)
+	extendedQueryRendered := MySQL.RenderSQL(extendedQuery)
 
 	if baseQueryRendered != baseQueryExpected {
 		t.Errorf("base query failed to render SQL => wanted: %q, got: %q", baseQueryExpected, baseQueryRendered)

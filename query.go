@@ -78,43 +78,6 @@ func (q Query) Offset(f SQLMarshalFunc) Query {
 	}
 }
 
-func (q Query) SQL(d Dialect) string {
-	clauses := map[ClauseKind]Clause{
-		WhereClause:   nil,
-		OrderByClause: nil,
-		GroupByClause: nil,
-		LimitClause:   nil,
-		OffsetClause:  nil,
-	}
-
-	for _, clause := range q.Clauses {
-		if clause.ClauseKind() == WhereClause && clauses[WhereClause] != nil {
-			clauses[WhereClause] = Where(And(clauses[WhereClause].Predicate(), clause.Predicate()))
-		} else {
-			clauses[clause.ClauseKind()] = clause
-		}
-	}
-
-	sql := q.Prelude(d)
-	if clause, ok := clauses[WhereClause]; ok && clause != nil {
-		sql += " " + clause.Prelude()(d) + clause.Predicate()(d)
-	}
-	if clause, ok := clauses[GroupByClause]; ok && clause != nil {
-		sql += " " + clause.Prelude()(d) + clause.Predicate()(d)
-	}
-	if clause, ok := clauses[OrderByClause]; ok && clause != nil {
-		sql += " " + clause.Prelude()(d) + clause.Predicate()(d)
-	}
-	if clause, ok := clauses[LimitClause]; ok && clause != nil {
-		sql += " " + clause.Prelude()(d) + clause.Predicate()(d)
-	}
-	if clause, ok := clauses[OffsetClause]; ok && clause != nil {
-		sql += " " + clause.Prelude()(d) + clause.Predicate()(d)
-	}
-
-	return sql
-}
-
 func Select(tables, columns SQLMarshalFunc) Query {
 	return Query{
 		func(d Dialect) string {
